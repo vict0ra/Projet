@@ -127,6 +127,7 @@ d_q_y = grad_y_norm.at<float>(stock_r.back().front(),stock_r.back().back());
 //cout<<"dq"<< d_q_x<<" "<<d_q_y<<endl;
 float eps =0.2;
 if ( abs(d_q_x-dp_pi6_x)<eps && (abs(d_q_y-dp_pi6_y)<eps||abs(d_q_y-dp_l_y)<eps)) return stock_r;
+else return empty_vec;
 */
 vector <int> dp(2), dq(2);
 dp[0] = -grad_x_norm.at<float>(coor[0],coor[1]);
@@ -138,13 +139,17 @@ if (acos(dp[0]*dq[0]+dp[1]*dq[1])-0.001<PI/2.0) return stock_r;
 else return empty_vec;
 }
  
- /*
-Mat SWT(){
+ 
+Mat Ray_images(const Mat& detected_edges,const Mat& src,const Mat& grad_x_norm, const Mat& grad_y_norm){
 	
 	Mat stock_vis;	
 	stock_vis = Mat::zeros(src.size[0],src.size[1],CV_8U);
-	
-
+	unsigned int a[2];
+	for(unsigned int i=0;i<src.size[0];i++){
+		for(unsigned int j=0;j<src.size[1];j++){
+			stock_vis.at<uchar>(i,j)=255;
+		}
+	}			 	 
 	for (unsigned int i=0;i<detected_edges.size[0];i++){
 		for (unsigned int j=0;j<detected_edges.size[1];j++){
 			if (detected_edges.at<uchar>(i,j)==255){
@@ -152,18 +157,54 @@ Mat SWT(){
 			vector< vector<int> > stock_r;
 			stock_r = archieve_edge(detected_edges, grad_x_norm, grad_y_norm, a, 1);		 
 			 if (stock_r.size()!=0){
-				 n+=1;
+				// n+=1;
 				 //cout<<"Size stock "<<stock_r.size()<<endl;	
 				 for (unsigned int i=0;i<stock_r.size();i++){
-					stock_vis.at<uchar>(stock_r[i][0],stock_r[i][1])=255;
+					stock_vis.at<uchar>(stock_r[i][0],stock_r[i][1])=0;
 				 }		 	 
 				}
 			}
 	 	}
 	}
-		 resizeshow(stock_vis,"Visualisize one ray ");
+	resizeshow(stock_vis," Rays ");
+	return stock_vis;
 } 
-*/
+Mat SWT(const Mat& detected_edges,const Mat& src,const Mat& grad_x_norm, const Mat& grad_y_norm){
+	
+	Mat stock_vis;	
+	stock_vis = Mat::zeros(src.size[0],src.size[1],CV_32F);
+	unsigned int a[2];
+	for(unsigned int i=0;i<src.size[0];i++){
+		for(unsigned int j=0;j<src.size[1];j++){
+			stock_vis.at<float>(i,j)=255;
+			//cout<<"Values of stock_vis"<<stock_vis.at<float>(i,j)<<endl;
+		}
+	}			 	 
+	for (unsigned int i=0;i<detected_edges.size[0];i++){
+		for (unsigned int j=0;j<detected_edges.size[1];j++){
+			if (detected_edges.at<uchar>(i,j)==255){
+			 a[0]=i; a[1]=j;
+			vector< vector<int> > stock_r;
+			stock_r = archieve_edge(detected_edges, grad_x_norm, grad_y_norm, a, 1);		 
+			 if (stock_r.size()!=0){
+				 for (unsigned int i=0;i<stock_r.size();i++){
+					 	//cout<<"Size stock "<<stock_r.size()<<endl;	
+						 if (stock_vis.at<float>(stock_r[i][0],stock_r[i][1])>stock_r.size()){
+						//cout<<"Size stock "<<stock_r.size()<<endl;	
+						stock_vis.at<float>(stock_r[i][0],stock_r[i][1])=stock_r.size();
+						//cout<<"Values of stock_vis : "<<stock_vis.at<float>(stock_r[i][0],stock_r[i][1])<<endl;
+						}
+				    }		 	 
+				}
+			}
+	 	}
+	}
+				
+	Mat swt_image;
+	normalize(stock_vis, swt_image, 0, 255, NORM_MINMAX, CV_8UC1);
+	resizeshow(swt_image," SWT ");
+	return swt_image;
+} 
 int main( int argc, char** argv )
 {
 	Mat src;
@@ -230,23 +271,24 @@ int main( int argc, char** argv )
 	 Mat grad_x_norm(grad_x.rows, grad_x.cols,CV_32F,0.0);
 	 Mat grad_y_norm(grad_x.size[0], grad_x.size[1],CV_32F,0.0);
 	 norm_gradient(grad_x,grad_y,grad_x_norm,grad_y_norm);
-	 
+
+/*  find maximum
+ 	 
 	double minVal; 
 	double maxVal; 
 	Point minLoc; 
 	Point maxLoc;
-//	minMaxLoc( grad_x, &minVal, &maxVal, &minLoc, &maxLoc );
-	
-	//cout<<"Min value : "<<minVal<<endl;
-	//cout<<"Max value : "<<maxVal<<endl;
-	
-	 unsigned int coor[2]={0,0};
+	minMaxLoc( grad_x, &minVal, &maxVal, &minLoc, &maxLoc );
+	cout<<"Min value : "<<minVal<<endl;
+	cout<<"Max value : "<<maxVal<<endl;
+*/	
+	 /*unsigned int coor[2]={0,0};
 	 coor[0] = 5;
 	 coor[1] = 10;
-
+	*/
 	 //cout<<"stock values "<<stock_r[1][1];
 	// stock_r = archieve_edge(detected_edges, grad_x_norm, grad_y_norm, a);
-
+	/*
 	  vector< vector<unsigned int> > v;
 	  unsigned int n(0);
 	  // Test archievement of one ray
@@ -259,83 +301,11 @@ int main( int argc, char** argv )
 			 }
 		 }
 	 }
+	*/ 
 	 
-	 
-	 unsigned int a[2];
-	 /*
-	 //for (unsigned int i=0;i<v.size();i++){
-		 a[0]=v[5][0];
-		 a[1]=v[5][1];
-		 vector< vector<int> > stock_r;
-	 stock_r = archieve_edge(detected_edges, grad_x_norm, grad_y_norm, a, 1);
-	 if (stock_r.size()!=0) cout<<"Taille stock"<<stock_r.size()<<endl;
- //}
-				Mat *stock_vis = new cv::Mat(src.size[0],src.size[1],CV_8U,0);	
-				 detected_edges.copyTo(*stock_vis);
-				 for (unsigned int i=0;i<stock_r.size();i++){
-					stock_vis->at<uchar>(stock_r[i][0],stock_r[i][1])=255;
-				 }
-				 //std::ostringstream name;
-				 //name << "Ray " << n << ".png";
-                 //cv::imwrite(name.str(), *stock_vis);
-				 resizeshow(*stock_vis,"Visualisize one ray ");	
-				 delete stock_vis;
-				 stock_vis =0;	
- */
- 
-/*each ray in the different image
 
-	for (unsigned int i=0;i<detected_edges.size[0];i++){
-		for (unsigned int j=0;j<detected_edges.size[1];j++){
-			if (detected_edges.at<uchar>(i,j)==255){
-			 a[0]=i; a[1]=j;
-			vector< vector<int> > stock_r;
-			stock_r = archieve_edge(detected_edges, grad_x_norm, grad_y_norm, a, 1);		 
-			 if (stock_r.size()!=0 && stock_r.size()!=1 && stock_r.size()!=2){
-				 n+=1;
-				 //cout<<"Size stock "<<stock_r.size()<<endl;	
-				 Mat *stock_vis = new cv::Mat(src.size[0],src.size[1],CV_8U,0);	
-				 detected_edges.copyTo(*stock_vis);
-				 for (unsigned int i=0;i<stock_r.size();i++){
-					stock_vis->at<uchar>(stock_r[i][0],stock_r[i][1])=255;
-				 }
-				 std::ostringstream name;
-				 name << "Ray " << n << ".png";
-                 cv::imwrite(name.str(), *stock_vis);
-				 resizeshow(*stock_vis,"Visualisize one ray ");	
-				 delete stock_vis;
-				 stock_vis =0;					 				 	 
-				}
-			}
-	 	}
-	}
 	
-*/
-//all rays in the one image
-/*	
-	Mat stock_vis;	
-	stock_vis = Mat::zeros(src.size[0],src.size[1],CV_8U);
-
-
-	for (unsigned int i=0;i<detected_edges.size[0];i++){
-		for (unsigned int j=0;j<detected_edges.size[1];j++){
-			if (detected_edges.at<uchar>(i,j)==255){
-			 a[0]=i; a[1]=j;
-			vector< vector<int> > stock_r;
-			stock_r = archieve_edge(detected_edges, grad_x_norm, grad_y_norm, a, 1);		 
-			 if (stock_r.size()!=0){
-				 n+=1;
-				 //cout<<"Size stock "<<stock_r.size()<<endl;	
-				 for (unsigned int i=0;i<stock_r.size();i++){
-					stock_vis.at<uchar>(stock_r[i][0],stock_r[i][1])=255;
-				 }		 	 
-				}
-			}
-	 	}
-	}
-		 resizeshow(stock_vis,"Visualisize one ray ");
-		 
-		 	
+	
 	//cout<<"n = "<<n<<endl;
 	 //cout<<"Test vector "<<stock_r[1][0]<<endl;
 	 //cout<<"Test vector "<<stock_r.back()[1]<<endl;
@@ -347,19 +317,37 @@ int main( int argc, char** argv )
 	 //cout<<eq<<endl;
 	 
 	  /// Directional gradient
-	  Mat atan_y_x;
-	  atan_y_x=directionalgradient(src_gray,grad_x, grad_y, 360);
-	  
+	  //Mat atan_y_x;
+	  //atan_y_x=directionalgradient(src_gray,grad_x, grad_y, 360);
+	 /// Visualize directional gradient
+	 // resizeshow(atan_y_x,"Directional gradient");
 
 	
 	  //imwrite( "Directional_gradient_d.jpg", atan_y_x );
-	  
-	  /// Visualize directional gradient
-	 // resizeshow(atan_y_x,"Directional gradient");
-	  	  
-	  //vector< vector<int> >* test(10,std::vector<int>(2));	  
+	    Mat stock_vis;
+	    stock_vis = Ray_images(detected_edges, src, grad_x_norm, grad_y_norm);
+	    Mat swt_image;
+	    swt_image = SWT(detected_edges, src, grad_x_norm, grad_y_norm);
+	    /*
+	    ty =  type2str( swt_image.type() );
+		printf("Matrix: %s %dx%d \n", ty.c_str(), swt_image.cols, swt_image.rows );
+		
+			double minVal; 
+			double maxVal; 
+			Point minLoc; 
+			Point maxLoc;
+			minMaxLoc( swt_image, &minVal, &maxVal, &minLoc, &maxLoc );
+			cout<<"Min value swt image: "<<minVal<<endl;
+			cout<<"Max value swt image: "<<maxVal<<endl;
+			for (unsigned int i=0;i<swt_image.size[0];i++){
+				for (unsigned int j=0;j<swt_image.size[1];j++){
+					if (swt_image.at<uchar>(i,j)!=0 && swt_image.at<uchar>(i,j)!=255)
+					cout<<"values : "<<(int)swt_image.at<uchar>(i,j)<<endl;
+				}
+			}
+		*/	
+	  imwrite( "SWT_image.jpg", swt_image );	
 	  /// Wait until user exit program by pressing a key
-	  
 	  waitKey(0);
 	  return 0;
   
