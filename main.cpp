@@ -14,6 +14,7 @@ using namespace std;
 
 /* resizeshow(input image): visualize input image in the window of 300*300
 */
+
 void resizeshow( Mat im, string window_name)
 {
   Mat im_output;
@@ -111,7 +112,7 @@ vector< vector<int> > archieve_edge(const Mat& edgesCanny, const Mat & grad_x_no
 			}
 			else return empty_vec;
 	} while (edgesCanny.at<uchar>(stock_r.back().front(),stock_r.back().back())!=255);
-
+/*
 float dp_pi6_x(0),dp_pi6_y(0),dp_l_x(0),dp_l_y(0);
 dp_pi6_x = -grad_x_norm.at<float>(coor[0],coor[1])+(float)cos (30.0*PI/180.0 );
 dp_pi6_y = -grad_y_norm.at<float>(coor[0],coor[1])+(float)sin (30.0*PI/180.0 );
@@ -126,10 +127,43 @@ d_q_y = grad_y_norm.at<float>(stock_r.back().front(),stock_r.back().back());
 //cout<<"dq"<< d_q_x<<" "<<d_q_y<<endl;
 float eps =0.2;
 if ( abs(d_q_x-dp_pi6_x)<eps && (abs(d_q_y-dp_pi6_y)<eps||abs(d_q_y-dp_l_y)<eps)) return stock_r;
+*/
+vector <int> dp(2), dq(2);
+dp[0] = -grad_x_norm.at<float>(coor[0],coor[1]);
+dp[1] = -grad_y_norm.at<float>(coor[0],coor[1]);
+dq[0] = grad_x_norm.at<float>(stock_r.back().front(),stock_r.back().back());
+dq[1] = grad_y_norm.at<float>(stock_r.back().front(),stock_r.back().back());
+//cout<<"Acos : "<< acos(dp[0]*dq[0]+dp[1]*dq[1])<<endl;
+if (acos(dp[0]*dq[0]+dp[1]*dq[1])-0.001<PI/2.0) return stock_r;
 else return empty_vec;
-
 }
+ 
+ /*
+Mat SWT(){
+	
+	Mat stock_vis;	
+	stock_vis = Mat::zeros(src.size[0],src.size[1],CV_8U);
+	
 
+	for (unsigned int i=0;i<detected_edges.size[0];i++){
+		for (unsigned int j=0;j<detected_edges.size[1];j++){
+			if (detected_edges.at<uchar>(i,j)==255){
+			 a[0]=i; a[1]=j;
+			vector< vector<int> > stock_r;
+			stock_r = archieve_edge(detected_edges, grad_x_norm, grad_y_norm, a, 1);		 
+			 if (stock_r.size()!=0){
+				 n+=1;
+				 //cout<<"Size stock "<<stock_r.size()<<endl;	
+				 for (unsigned int i=0;i<stock_r.size();i++){
+					stock_vis.at<uchar>(stock_r[i][0],stock_r[i][1])=255;
+				 }		 	 
+				}
+			}
+	 	}
+	}
+		 resizeshow(stock_vis,"Visualisize one ray ");
+} 
+*/
 int main( int argc, char** argv )
 {
 	Mat src;
@@ -173,6 +207,9 @@ int main( int argc, char** argv )
 	  ///Canny edge detection
 	  Canny( detected_edges, detected_edges, lowThreshold, lowThreshold*ratio, kernel_size );
 	  resizeshow(detected_edges,"Canny detector");
+
+	  //bitwise_not ( detected_edges, detected_edges);	  //inverse Canny edge detector
+	  //resizeshow(detected_edges,"Canny detector inverse");
 	  
 	//  std::cout<<"Test Canny"<<(int)detected_edges.at<uchar>(1,1)<<std::endl;
 
@@ -246,7 +283,7 @@ int main( int argc, char** argv )
 				 stock_vis =0;	
  */
  
-/*for all rays
+/*each ray in the different image
 
 	for (unsigned int i=0;i<detected_edges.size[0];i++){
 		for (unsigned int j=0;j<detected_edges.size[1];j++){
@@ -274,7 +311,8 @@ int main( int argc, char** argv )
 	}
 	
 */
-	
+//all rays in the one image
+/*	
 	Mat stock_vis;	
 	stock_vis = Mat::zeros(src.size[0],src.size[1],CV_8U);
 
@@ -320,7 +358,6 @@ int main( int argc, char** argv )
 	 // resizeshow(atan_y_x,"Directional gradient");
 	  	  
 	  //vector< vector<int> >* test(10,std::vector<int>(2));	  
-
 	  /// Wait until user exit program by pressing a key
 	  
 	  waitKey(0);
