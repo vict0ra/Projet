@@ -129,6 +129,7 @@ float eps =0.2;
 if ( abs(d_q_x-dp_pi6_x)<eps && (abs(d_q_y-dp_pi6_y)<eps||abs(d_q_y-dp_l_y)<eps)) return stock_r;
 else return empty_vec;
 */
+
 vector <int> dp(2), dq(2);
 dp[0] = -grad_x_norm.at<float>(coor[0],coor[1]);
 dp[1] = -grad_y_norm.at<float>(coor[0],coor[1]);
@@ -137,6 +138,7 @@ dq[1] = grad_y_norm.at<float>(stock_r.back().front(),stock_r.back().back());
 //cout<<"Acos : "<< acos(dp[0]*dq[0]+dp[1]*dq[1])<<endl;
 if (acos(dp[0]*dq[0]+dp[1]*dq[1])-0.001<PI/2.0) return stock_r;
 else return empty_vec;
+
 }
  
  
@@ -176,33 +178,47 @@ Mat SWT(const Mat& detected_edges,const Mat& src,const Mat& grad_x_norm, const M
 	unsigned int a[2];
 	for(unsigned int i=0;i<src.size[0];i++){
 		for(unsigned int j=0;j<src.size[1];j++){
-			stock_vis.at<float>(i,j)=255;
+			stock_vis.at<float>(i,j)=255;//src.size[0]*src.size[1];
 			//cout<<"Values of stock_vis"<<stock_vis.at<float>(i,j)<<endl;
 		}
 	}			 	 
 	for (unsigned int i=0;i<detected_edges.size[0];i++){
 		for (unsigned int j=0;j<detected_edges.size[1];j++){
-			if (detected_edges.at<uchar>(i,j)==255){
+			if (detected_edges.at<uchar>(i,j)==255.0){
 			 a[0]=i; a[1]=j;
 			vector< vector<int> > stock_r;
-			stock_r = archieve_edge(detected_edges, grad_x_norm, grad_y_norm, a, 1);		 
+			stock_r = archieve_edge(detected_edges, grad_x_norm, grad_y_norm, a, 0.5);		 
 			 if (stock_r.size()!=0){
+				 float med(0);
 				 for (unsigned int i=0;i<stock_r.size();i++){
-					 	//cout<<"Size stock "<<stock_r.size()<<endl;	
-						 if (stock_vis.at<float>(stock_r[i][0],stock_r[i][1])>stock_r.size()){
-						//cout<<"Size stock "<<stock_r.size()<<endl;	
+						 if (stock_vis.at<float>(stock_r[i][0],stock_r[i][1])>stock_r.size()){	
 						stock_vis.at<float>(stock_r[i][0],stock_r[i][1])=stock_r.size();
-						//cout<<"Values of stock_vis : "<<stock_vis.at<float>(stock_r[i][0],stock_r[i][1])<<endl;
 						}
-				    }		 	 
+						med += stock_vis.at<float>(stock_r[i][0],stock_r[i][1]); 
+				    }
+				    med = med/stock_r.size();
+				    for (unsigned int i=0;i<stock_r.size();i++) stock_vis.at<float>(stock_r[i][0],stock_r[i][1])=med;		 	 
 				}
 			}
 	 	}
 	}
-				
+
+	float mean1;
+	int nt(0);
+	for (unsigned int i=0;i<detected_edges.size[0];i++){
+		for (unsigned int j=0;j<detected_edges.size[1];j++){
+			if (stock_vis.at<float>(i,j)!=255) {mean1 +=stock_vis.at<float>(i,j);nt+=1;}
+		}
+	}
+	mean1 = mean1/(nt*1.0);
+		for (unsigned int i=0;i<detected_edges.size[0];i++){
+		for (unsigned int j=0;j<detected_edges.size[1];j++){
+			if (stock_vis.at<float>(i,j)>mean1) {stock_vis.at<float>(i,j)=255.0;}
+		}
+	}
 	Mat swt_image;
 	normalize(stock_vis, swt_image, 0, 255, NORM_MINMAX, CV_8UC1);
-	resizeshow(swt_image," SWT ");
+	//resizeshow(swt_image," SWT ");
 	return swt_image;
 } 
 int main( int argc, char** argv )
@@ -225,8 +241,8 @@ int main( int argc, char** argv )
    
 	int edgeThresh = 1;
 	//int lowThreshold;
-	int lowThreshold = 100;
-	int const max_lowThreshold = 100;
+	int lowThreshold = 50;
+	int const max_lowThreshold = 320;
 	int ratio = 3;
 	int kernel_size = 3;
 	//char* window_name = "Edge Map";
@@ -255,8 +271,8 @@ int main( int argc, char** argv )
 	//  std::cout<<"Test Canny"<<(int)detected_edges.at<uchar>(1,1)<<std::endl;
 
 		
-	string ty =  type2str( detected_edges.type() );
-    printf("Matrix: %s %dx%d \n", ty.c_str(), detected_edges.cols, detected_edges.rows );
+	//string ty =  type2str( detected_edges.type() );
+    //printf("Matrix: %s %dx%d \n", ty.c_str(), detected_edges.cols, detected_edges.rows );
     
 	  //resizeshow(detected_edges,"Directional gradient");
 	  
@@ -346,7 +362,8 @@ int main( int argc, char** argv )
 				}
 			}
 		*/	
-	  imwrite( "SWT_image.jpg", swt_image );	
+	  imwrite("/home/vika/projects/mycode/Projet/SWT_test.jpg", swt_image );	
+	  resizeshow(swt_image ,"SWT");
 	  /// Wait until user exit program by pressing a key
 	  waitKey(0);
 	  return 0;
